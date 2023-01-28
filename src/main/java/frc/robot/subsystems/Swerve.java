@@ -1,5 +1,7 @@
 package frc.robot.subsystems;
 
+import com.kauailabs.navx.frc.AHRS;
+
 // import com.ctre.phoenix.sensors.Pigeon2;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -7,40 +9,47 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
+import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.wpilibj.SPI.Port;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import edu.wpi.first.wpilibj.SPI.Port;
 import frc.robot.Constants;
-import com.kauailabs.navx.frc.AHRS;
-
 
 public class Swerve extends SubsystemBase {
   // private final Pigeon2 gyro;
   private final AHRS gyro = new AHRS(Port.kMXP, (byte) 200); // NavX connected over MXP port
 
-
   private SwerveDriveOdometry swerveOdometry;
+  private SwerveModule m_frontLeftModule, m_frontRightModule, m_rearLeftModule, m_rearRightModule;
   private SwerveModule[] mSwerveMods;
 
   private Field2d field;
 
   public Swerve() {
-    // gyro = new Pigeon2(Constants.Swerve.pigeonID);
-    
-    // gyro.configFactoryDefault();
     zeroGyro();
 
-    swerveOdometry = new SwerveDriveOdometry(Constants.Swerve.swerveKinematics, getYaw());
+    // swerveOdometry = new SwerveDriveOdometry(Constants.Swerve.swerveKinematics,
+    // getYaw());
+    m_frontLeftModule = new SwerveModule(0, Constants.Swerve.Mod0.constants);
+    m_frontRightModule = new SwerveModule(1, Constants.Swerve.Mod1.constants);
+    m_rearLeftModule = new SwerveModule(2, Constants.Swerve.Mod2.constants);
+    m_rearRightModule = new SwerveModule(3, Constants.Swerve.Mod3.constants);
 
-    mSwerveMods =
-        new SwerveModule[] {
-          new SwerveModule(0, Constants.Swerve.Mod0.constants),
-          new SwerveModule(1, Constants.Swerve.Mod1.constants),
-          new SwerveModule(2, Constants.Swerve.Mod2.constants),
-          new SwerveModule(3, Constants.Swerve.Mod3.constants)
-        };
+    mSwerveMods = new SwerveModule[] {
+        m_frontLeftModule,
+        m_frontRightModule,
+        m_rearLeftModule,
+        m_rearRightModule
+    };
+
+    swerveOdometry = new SwerveDriveOdometry(Constants.Swerve.swerveKinematics, getYaw(), new SwerveModulePosition[] {
+        m_frontLeftModule.getPosition(),
+        m_frontRightModule.getPosition(),
+        m_rearLeftModule.getPosition(),
+        m_rearRightModule.getPosition()
+    });
 
     field = new Field2d();
     SmartDashboard.putData("Field", field);
@@ -48,12 +57,11 @@ public class Swerve extends SubsystemBase {
 
   public void drive(
       Translation2d translation, double rotation, boolean fieldRelative, boolean isOpenLoop) {
-    SwerveModuleState[] swerveModuleStates =
-        Constants.Swerve.swerveKinematics.toSwerveModuleStates(
-            fieldRelative
-                ? ChassisSpeeds.fromFieldRelativeSpeeds(
-                    translation.getX(), translation.getY(), rotation, getYaw())
-                : new ChassisSpeeds(translation.getX(), translation.getY(), rotation));
+    SwerveModuleState[] swerveModuleStates = Constants.Swerve.swerveKinematics.toSwerveModuleStates(
+        fieldRelative
+            ? ChassisSpeeds.fromFieldRelativeSpeeds(
+                translation.getX(), translation.getY(), rotation, getYaw())
+            : new ChassisSpeeds(translation.getX(), translation.getY(), rotation));
     SwerveDriveKinematics.desaturateWheelSpeeds(swerveModuleStates, Constants.Swerve.maxSpeed);
 
     for (SwerveModule mod : mSwerveMods) {
@@ -75,7 +83,12 @@ public class Swerve extends SubsystemBase {
   }
 
   public void resetOdometry(Pose2d pose) {
-    swerveOdometry.resetPosition(pose, getYaw());
+    swerveOdometry.resetPosition(getGyroscopeRotation(), new SwerveModulePosition[] {
+        m_frontLeftModule.getPosition(),
+        m_frontRightModule.getPosition(),
+        m_rearLeftModule.getPosition(),
+        m_rearRightModule.getPosition()
+    }, new Pose2d());
   }
 
   public SwerveModuleState[] getStates() {
@@ -92,13 +105,44 @@ public class Swerve extends SubsystemBase {
 
   public Rotation2d getYaw() {
     return (Constants.Swerve.invertGyro)
-        ? Rotation2d.fromDegrees(360 - gyro.getYaw())
-        : Rotation2d.fromDegrees(gyro.getYaw());
+        ? Rotation2d.fromDegrees(360 - heading())
+        : Rotation2d.fromDegrees(heading());
+  }
+
+  public Rotation2d getGyroscopeRotation() {
+
+    if (gyro.isMagnetometerCalibrated()) {
+      // We will only get valid fused headings if the magnetometer is calibrated
+      return Rotation2d.fromDegrees(gyro.getFusedHeading());
+    }
+    //
+    // // We have to invert the angle of the NavX so that rotating the robot
+    // counter-clockwise makes the angle increase.
+    return Rotation2d.fromDegrees(360.0 - gyro.getYaw());
+  }
+
+  public double heading() {
+    if (gyro.isMagnetometerCalibrated()) {
+      // We will only get valid fused headings if the magnetometer is calibrated
+      return (gyro.getFusedHeading());
+    }
+    //
+    // // We have to invert the angle of the NavX so that rotating the robot
+    // counter-clockwise makes the angle increase.
+    return (360.0 - gyro.getYaw());
+
   }
 
   @Override
   public void periodic() {
-    swerveOdometry.update(getYaw(), getStates());
+    // swerveOdometry.update(getYaw(), getStates());
+    swerveOdometry.update(getGyroscopeRotation(), new SwerveModulePosition[] {
+      m_frontLeftModule.getPosition(),
+      m_frontRightModule.getPosition(),
+      m_rearLeftModule.getPosition(),
+      m_rearRightModule.getPosition()
+    });
+
     field.setRobotPose(getPose());
 
     for (SwerveModule mod : mSwerveMods) {
@@ -109,5 +153,5 @@ public class Swerve extends SubsystemBase {
       SmartDashboard.putNumber(
           "Mod " + mod.moduleNumber + " Velocity", mod.getState().speedMetersPerSecond);
     }
-  }
-}
+
+}}
