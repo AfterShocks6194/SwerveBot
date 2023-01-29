@@ -4,6 +4,8 @@
 
 package frc.robot;
 
+import org.photonvision.PhotonCamera;
+
 import com.pathplanner.lib.PathConstraints;
 import com.pathplanner.lib.PathPlanner;
 import com.pathplanner.lib.PathPlannerTrajectory;
@@ -61,6 +63,9 @@ public class RobotContainer {
   TrajectoryConfig defaultConfig;
 
   private static final SendableChooser<String> AutoPath = new SendableChooser<>();
+
+  private final PhotonCamera photonCamera = new PhotonCamera("LimeLight");
+  private final PoseEstimatorSubsystem poseEstimator = new PoseEstimatorSubsystem(photonCamera, s_Swerve);
 
   /**
    * The container for the robot. Contains subsystems, OI devices, and commands.
@@ -122,7 +127,7 @@ public class RobotContainer {
 
     PPSwerveControllerCommand swerveControllerCommand = new PPSwerveControllerCommand(
         ChosenPath,
-        s_Swerve::getPose,
+        poseEstimator::getCurrentPose,
         Constants.Swerve.swerveKinematics,
         xController,
         yController,
@@ -153,7 +158,7 @@ public class RobotContainer {
 
     PPSwerveControllerCommand swerveControllerCommand = new PPSwerveControllerCommand(
         onTheFly,
-        s_Swerve::getPose,
+        poseEstimator::getCurrentPose,
         Constants.Swerve.swerveKinematics,
         xController,
         yController,
@@ -183,7 +188,7 @@ public class RobotContainer {
 
     PPSwerveControllerCommand swerveControllerCommand = new PPSwerveControllerCommand(
         onTheFly,
-        s_Swerve::getPose,
+        poseEstimator::getCurrentPose,
         Constants.Swerve.swerveKinematics,
         xController,
         yController,
