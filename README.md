@@ -4,7 +4,7 @@
 
 Therefore, their [instructions](https://github.com/Team364/BaseFalconSwerve#setting-constants) on modifiying the constants to fit your robot will also work on this repo as well.
 
-Status as of 1/29/2023 - Drivetrain is fully functional. Have not yet tested PathPlanner or PhotoVision.
+__Status as of 1/29/2023 - Drivetrain is fully functional. Have not yet tested PathPlanner or PhotoVision.__
 
 ### Configurations
 - Works with a swerve drive with __NEO brushless motors__, __Spark Max motor controllers__, __CTRE CANCoders__, and __NavX__.
