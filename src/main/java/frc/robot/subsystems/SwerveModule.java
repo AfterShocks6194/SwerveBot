@@ -1,5 +1,6 @@
 package frc.robot.subsystems;
 
+import com.ctre.phoenix.ErrorCode;
 import com.ctre.phoenix.sensors.CANCoder;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMax.ControlType;
@@ -154,4 +155,5 @@ public class SwerveModule {
     return new SwerveModulePosition(
         driveEncoder.getPosition(), Rotation2d.fromDegrees(integratedAngleEncoder.getPosition()));
   }
+  
 }
