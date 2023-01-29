@@ -18,20 +18,17 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 
 public class Swerve extends SubsystemBase {
-  // private final Pigeon2 gyro;
   private final AHRS gyro = new AHRS(Port.kMXP, (byte) 200); // NavX connected over MXP port
 
   private SwerveDriveOdometry swerveOdometry;
   private SwerveModule m_frontLeftModule, m_frontRightModule, m_rearLeftModule, m_rearRightModule;
   private SwerveModule[] mSwerveMods;
 
-  private Field2d field;
+  public Field2d field;
 
   public Swerve() {
     zeroGyro();
 
-    // swerveOdometry = new SwerveDriveOdometry(Constants.Swerve.swerveKinematics,
-    // getYaw());
     m_frontLeftModule = new SwerveModule(0, Constants.Swerve.Mod0.constants);
     m_frontRightModule = new SwerveModule(1, Constants.Swerve.Mod1.constants);
     m_rearLeftModule = new SwerveModule(2, Constants.Swerve.Mod2.constants);
@@ -44,16 +41,18 @@ public class Swerve extends SubsystemBase {
         m_rearRightModule
     };
 
-    swerveOdometry = new SwerveDriveOdometry(Constants.Swerve.swerveKinematics, getYaw(), new SwerveModulePosition[] {
-        m_frontLeftModule.getPosition(),
-        m_frontRightModule.getPosition(),
-        m_rearLeftModule.getPosition(),
-        m_rearRightModule.getPosition()
-    });
-
+    swerveOdometry = new SwerveDriveOdometry(Constants.Swerve.swerveKinematics, getYaw(), getPositions());
     field = new Field2d();
     SmartDashboard.putData("Field", field);
   }
+
+  public Field2d getField() {
+    return field;
+  }
+
+  // public void setField(Field2d field) {
+  // this.field = field;
+  // }
 
   public void drive(
       Translation2d translation, double rotation, boolean fieldRelative, boolean isOpenLoop) {
@@ -72,7 +71,6 @@ public class Swerve extends SubsystemBase {
   /* Used by SwerveControllerCommand in Auto */
   public void setModuleStates(SwerveModuleState[] desiredStates) {
     SwerveDriveKinematics.desaturateWheelSpeeds(desiredStates, Constants.Swerve.maxSpeed);
-
     for (SwerveModule mod : mSwerveMods) {
       mod.setDesiredState(desiredStates[mod.moduleNumber], false);
     }
@@ -82,13 +80,16 @@ public class Swerve extends SubsystemBase {
     return swerveOdometry.getPoseMeters();
   }
 
+  public Translation2d getTranslation() {
+    Pose2d currentPose2d = new Pose2d();
+    Translation2d currentTranslaton2d = new Translation2d();
+    currentPose2d = swerveOdometry.getPoseMeters();
+    currentTranslaton2d = currentPose2d.getTranslation();
+    return currentTranslaton2d;
+  };
+
   public void resetOdometry(Pose2d pose) {
-    swerveOdometry.resetPosition(getGyroscopeRotation(), new SwerveModulePosition[] {
-        m_frontLeftModule.getPosition(),
-        m_frontRightModule.getPosition(),
-        m_rearLeftModule.getPosition(),
-        m_rearRightModule.getPosition()
-    }, new Pose2d());
+    swerveOdometry.resetPosition(getGyroscopeRotation(), getPositions(), pose);
   }
 
   public SwerveModuleState[] getStates() {
@@ -97,6 +98,22 @@ public class Swerve extends SubsystemBase {
       states[mod.moduleNumber] = mod.getState();
     }
     return states;
+  }
+
+  public SwerveModulePosition[] getPositions() {
+    SwerveModulePosition[] positions = new SwerveModulePosition[4];
+    for (SwerveModule mod : mSwerveMods) {
+      positions[mod.moduleNumber] = mod.getPosition();
+    }
+    return positions;
+  }
+
+  public void stopModules() {
+    m_frontLeftModule.setDesiredState(new SwerveModuleState(0, new Rotation2d(0)), false);
+    m_frontRightModule.setDesiredState(new SwerveModuleState(0, new Rotation2d(0)), false);
+    m_rearLeftModule.setDesiredState(new SwerveModuleState(0, new Rotation2d(0)), false);
+    m_rearRightModule.setDesiredState(new SwerveModuleState(0, new Rotation2d(0)), false);
+
   }
 
   public void zeroGyro() {
@@ -110,12 +127,10 @@ public class Swerve extends SubsystemBase {
   }
 
   public Rotation2d getGyroscopeRotation() {
-
     if (gyro.isMagnetometerCalibrated()) {
       // We will only get valid fused headings if the magnetometer is calibrated
       return Rotation2d.fromDegrees(gyro.getFusedHeading());
     }
-    //
     // // We have to invert the angle of the NavX so that rotating the robot
     // counter-clockwise makes the angle increase.
     return Rotation2d.fromDegrees(360.0 - gyro.getYaw());
@@ -126,7 +141,6 @@ public class Swerve extends SubsystemBase {
       // We will only get valid fused headings if the magnetometer is calibrated
       return (gyro.getFusedHeading());
     }
-    //
     // // We have to invert the angle of the NavX so that rotating the robot
     // counter-clockwise makes the angle increase.
     return (360.0 - gyro.getYaw());
@@ -135,15 +149,10 @@ public class Swerve extends SubsystemBase {
 
   @Override
   public void periodic() {
-    // swerveOdometry.update(getYaw(), getStates());
-    swerveOdometry.update(getGyroscopeRotation(), new SwerveModulePosition[] {
-      m_frontLeftModule.getPosition(),
-      m_frontRightModule.getPosition(),
-      m_rearLeftModule.getPosition(),
-      m_rearRightModule.getPosition()
-    });
-
+    swerveOdometry.update(getGyroscopeRotation(), getPositions());
     field.setRobotPose(getPose());
+    SmartDashboard.putNumber("Robot Heading", heading());
+    SmartDashboard.putString("Robot Location", getPose().getTranslation().toString());
 
     for (SwerveModule mod : mSwerveMods) {
       SmartDashboard.putNumber(
@@ -153,5 +162,7 @@ public class Swerve extends SubsystemBase {
       SmartDashboard.putNumber(
           "Mod " + mod.moduleNumber + " Velocity", mod.getState().speedMetersPerSecond);
     }
+    SmartDashboard.updateValues();
 
-}}
+  }
+}
