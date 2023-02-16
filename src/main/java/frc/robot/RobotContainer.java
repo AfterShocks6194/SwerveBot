@@ -25,6 +25,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import frc.robot.autos.*;
@@ -49,23 +50,30 @@ public class RobotContainer {
   private final int translationAxis = XboxController.Axis.kLeftY.value;
   private final int strafeAxis = XboxController.Axis.kLeftX.value;
   private final int rotationAxis = XboxController.Axis.kRightX.value;
+  private final int shoulderAxis = XboxController.Axis.kRightY.value;
 
   /* Driver Buttons */
   private final JoystickButton zeroGyro = new JoystickButton(driver, XboxController.Button.kY.value);
-  private final JoystickButton robotCentric = new JoystickButton(driver, XboxController.Button.kLeftBumper.value);
+  private final JoystickButton robotCentric = new JoystickButton(driver, XboxController.Button.kBack.value);
   private final JoystickButton getGamepiece = new JoystickButton(driver, XboxController.Button.kA.value);
   private final JoystickButton goScore = new JoystickButton(driver, XboxController.Button.kB.value);
+  private final JoystickButton enableArm = new JoystickButton(driver, XboxController.Button.kX.value);
+  private final JoystickButton intakeIn = new JoystickButton(driver, XboxController.Button.kLeftBumper.value);
+  private final JoystickButton intakeOut = new JoystickButton(driver, XboxController.Button.kRightBumper.value);
+  private final JoystickButton absolute = new JoystickButton(driver, XboxController.Button.kStart.value);
 
 
   /* Subsystems */
   private final Swerve s_Swerve = new Swerve();
+  private final Arm arm = new Arm();
 
   TrajectoryConfig defaultConfig;
 
   private static final SendableChooser<String> AutoPath = new SendableChooser<>();
 
-  private final PhotonCamera photonCamera = new PhotonCamera("LimeLight");
+  private final PhotonCamera photonCamera = new PhotonCamera("photonCamera");
   private final PoseEstimatorSubsystem poseEstimator = new PoseEstimatorSubsystem(photonCamera, s_Swerve);
+
 
   /**
    * The container for the robot. Contains subsystems, OI devices, and commands.
@@ -74,10 +82,11 @@ public class RobotContainer {
     s_Swerve.setDefaultCommand(
         new TeleopSwerve(
             s_Swerve,
-            () -> driver.getRawAxis(translationAxis),
-            () -> driver.getRawAxis(strafeAxis),
-            () -> driver.getRawAxis(rotationAxis),
-            () -> robotCentric.getAsBoolean()));
+            () -> -driver.getRawAxis(translationAxis),
+            () -> -driver.getRawAxis(strafeAxis),
+            () -> -driver.getRawAxis(rotationAxis),
+            () -> robotCentric.getAsBoolean()));    
+
 
     // Configure the button bindings
     configureButtonBindings();
@@ -98,11 +107,20 @@ public class RobotContainer {
    * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
    */
   private void configureButtonBindings() {
+    Command runTheArm = new RunCommand(() -> arm.setSpeed(driver.getRawAxis(shoulderAxis)), arm);
+    Command IntakeInwards = new RunCommand(() -> arm.setIntakeSpeed(.5), arm);
+    Command IntakeOutwards = new RunCommand(() -> arm.setIntakeSpeed(-.5), arm);
+
+
+
     /* Driver Buttons */
     zeroGyro.onTrue(new InstantCommand(() -> s_Swerve.zeroGyro()));
     getGamepiece.onTrue(goGetGamePieces());
     goScore.onTrue(returnToScore());
-
+    enableArm.toggleOnTrue(runTheArm);
+    intakeIn.whileTrue(IntakeInwards);
+    intakeOut.whileTrue(IntakeOutwards);
+    
   }
 
   /**

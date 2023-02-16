@@ -1,7 +1,11 @@
 package frc.robot.subsystems;
 
+import java.util.ArrayList;
+
 import com.kauailabs.navx.frc.AHRS;
 
+import edu.wpi.first.hal.SimDouble;
+import edu.wpi.first.hal.simulation.SimDeviceDataJNI;
 // import com.ctre.phoenix.sensors.Pigeon2;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -16,6 +20,8 @@ import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
+import frc.wpiClasses.QuadSwerveSim;
+
 
 public class Swerve extends SubsystemBase {
   private final AHRS gyro = new AHRS(Port.kMXP, (byte) 200); // NavX connected over MXP port
@@ -23,6 +29,7 @@ public class Swerve extends SubsystemBase {
   private SwerveDriveOdometry swerveOdometry;
   private SwerveModule m_frontLeftModule, m_frontRightModule, m_rearLeftModule, m_rearRightModule;
   private SwerveModule[] mSwerveMods;
+
 
   public Field2d field;
 
@@ -93,20 +100,26 @@ public class Swerve extends SubsystemBase {
   }
 
   public SwerveModuleState[] getStates() {
-    SwerveModuleState[] states = new SwerveModuleState[4];
-    for (SwerveModule mod : mSwerveMods) {
-      states[mod.moduleNumber] = mod.getState();
-    }
+    SwerveModuleState[] states = new SwerveModuleState[]{
+      m_frontLeftModule.getState(),
+      m_frontRightModule.getState(),
+      m_rearLeftModule.getState(),
+      m_rearRightModule.getState()
+    };
     return states;
-  }
+  };
 
   public SwerveModulePosition[] getPositions() {
-    SwerveModulePosition[] positions = new SwerveModulePosition[4];
-    for (SwerveModule mod : mSwerveMods) {
-      positions[mod.moduleNumber] = mod.getPosition();
-    }
+    SwerveModulePosition[] positions = new SwerveModulePosition[] {
+      m_frontLeftModule.getPosition(),
+      m_frontRightModule.getPosition(),
+      m_rearLeftModule.getPosition(),
+      m_rearRightModule.getPosition()
+    };
     return positions;
-  }
+  };
+
+
 
   public void stopModules() {
     m_frontLeftModule.setDesiredState(new SwerveModuleState(0, new Rotation2d(0)), false);

@@ -107,7 +107,7 @@ public final class Constants {
 
     /* Motor Inverts */
     //fixme - Not 100% sure this is right?
-    public static final boolean driveInvert = false;
+    public static final boolean driveInvert = true;
     public static final boolean angleInvert = true;
 
     /* Angle Encoder Invert */
@@ -179,5 +179,23 @@ public final class Constants {
     public static final Transform3d CAMERA_TO_ROBOT =
         new Transform3d(new Translation3d(-0.3425, 0.0, -0.233), new Rotation3d());
     public static final Transform3d ROBOT_TO_CAMERA = CAMERA_TO_ROBOT.inverse();
+  }
+
+  public static class ArmConstants {
+        /* Drive Motor PID Values */
+        public static final double armKP = 0.1;
+        public static final double armKI = 0.0;
+        public static final double armKD = 0.0;
+        public static final double armKFF = 0.0;
+    
+        /* Drive Motor Characterization Values */
+        public static final double armKS = 0.667;
+        public static final double armKV = 2.44;
+        public static final double armKA = 0.27;
+
+        public static final int shoulderMotorID = 15;
+        public static final int intakeMotorID = 16;
+        public static final int wristMotorID = 17;
+
   }
 }
