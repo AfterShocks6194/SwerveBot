@@ -129,6 +129,13 @@ public class Swerve extends SubsystemBase {
 
   }
 
+  public void resetAngles(){
+    m_frontLeftModule.resetToAbsolute();
+    m_frontRightModule.resetToAbsolute();
+    m_rearLeftModule.resetToAbsolute();
+    m_rearRightModule.resetToAbsolute();
+  }
+
   public void zeroGyro() {
     gyro.zeroYaw();
   }

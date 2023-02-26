@@ -50,17 +50,18 @@ public class RobotContainer {
   private final int translationAxis = XboxController.Axis.kLeftY.value;
   private final int strafeAxis = XboxController.Axis.kLeftX.value;
   private final int rotationAxis = XboxController.Axis.kRightX.value;
-  private final int shoulderAxis = XboxController.Axis.kRightY.value;
+  private final int shoulderAxis = XboxController.Axis.kRightTrigger.value;
+private final int wristaxis = XboxController.Axis.kLeftTrigger.value;
 
   /* Driver Buttons */
-  private final JoystickButton zeroGyro = new JoystickButton(driver, XboxController.Button.kY.value);
+  private final JoystickButton zeroGyro = new JoystickButton(driver, XboxController.Button.kStart.value);
   private final JoystickButton robotCentric = new JoystickButton(driver, XboxController.Button.kBack.value);
-  private final JoystickButton getGamepiece = new JoystickButton(driver, XboxController.Button.kA.value);
-  private final JoystickButton goScore = new JoystickButton(driver, XboxController.Button.kB.value);
-  private final JoystickButton enableArm = new JoystickButton(driver, XboxController.Button.kX.value);
+  private final JoystickButton getGamepiece = new JoystickButton(driver, XboxController.Button.kY.value);
+  private final JoystickButton goScore = new JoystickButton(driver, XboxController.Button.kX.value);
+  private final JoystickButton extendArm = new JoystickButton(driver, XboxController.Button.kA.value);
   private final JoystickButton intakeIn = new JoystickButton(driver, XboxController.Button.kLeftBumper.value);
   private final JoystickButton intakeOut = new JoystickButton(driver, XboxController.Button.kRightBumper.value);
-  private final JoystickButton absolute = new JoystickButton(driver, XboxController.Button.kStart.value);
+  private final JoystickButton absolute = new JoystickButton(driver, XboxController.Button.kB.value);
 
 
   /* Subsystems */
@@ -96,6 +97,7 @@ public class RobotContainer {
     AutoPath.setDefaultOption("New Path", "New Path");
     SmartDashboard.putData("Auto Pathing", AutoPath);
 
+
   }
 
   /**
@@ -107,19 +109,29 @@ public class RobotContainer {
    * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
    */
   private void configureButtonBindings() {
-    Command runTheArm = new RunCommand(() -> arm.setSpeed(driver.getRawAxis(shoulderAxis)), arm);
-    Command IntakeInwards = new RunCommand(() -> arm.setIntakeSpeed(.5), arm);
-    Command IntakeOutwards = new RunCommand(() -> arm.setIntakeSpeed(-.5), arm);
+    Command extendArmCommand = new RunCommand(() -> arm.setArmPosition(125, 75), arm);
+    Command retractArmCommand = new RunCommand(() -> arm.setArmPosition(0,0), arm);
+    Command collectgamepiececommand = new RunCommand(() -> arm.setArmPosition(47,75), arm);
+    Command cubeModeEngage =  new RunCommand(() -> arm.setArmPosition(47,15), arm);
+    Command IntakeInwards = new RunCommand(() -> arm.setIntakeSpeed(.5));
+    Command IntakeOutwards = new RunCommand(() -> arm.setIntakeSpeed(-.5));
+    
 
 
 
     /* Driver Buttons */
     zeroGyro.onTrue(new InstantCommand(() -> s_Swerve.zeroGyro()));
-    getGamepiece.onTrue(goGetGamePieces());
-    goScore.onTrue(returnToScore());
-    enableArm.toggleOnTrue(runTheArm);
+    getGamepiece.onTrue(collectgamepiececommand);
+    goScore.onTrue(cubeModeEngage);
     intakeIn.whileTrue(IntakeInwards);
     intakeOut.whileTrue(IntakeOutwards);
+    absolute.onTrue(new InstantCommand(() -> s_Swerve.resetAngles()));
+
+    extendArm.onTrue(extendArmCommand);
+    extendArm.onFalse(retractArmCommand);
+
+    // extendArm.toggleOnTrue(extendArmCommand);
+
     
   }
 

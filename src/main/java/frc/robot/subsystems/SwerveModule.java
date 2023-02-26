@@ -11,6 +11,7 @@ import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.wpilibj.Timer;
 import frc.lib.config.SwerveModuleConstants;
 import frc.lib.math.OnboardModuleState;
 import frc.lib.util.CANCoderUtil;
@@ -71,7 +72,7 @@ public class SwerveModule {
     setSpeed(desiredState, isOpenLoop);
   }
 
-  private void resetToAbsolute() {
+  public void resetToAbsolute() {
     double absolutePosition = getCanCoder().getDegrees() - angleOffset.getDegrees();
     integratedAngleEncoder.setPosition(absolutePosition);
   }
@@ -95,6 +96,8 @@ public class SwerveModule {
     angleController.setFF(Constants.Swerve.angleKFF);
     angleMotor.enableVoltageCompensation(Constants.Swerve.voltageComp);
     angleMotor.burnFlash();
+    //Maybe this delay will fix the dead leg syndrome?
+    Timer.delay(1);
     resetToAbsolute();
   }
 

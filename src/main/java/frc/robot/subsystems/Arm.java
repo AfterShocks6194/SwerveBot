@@ -4,6 +4,7 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.SparkMaxPIDController;
 import com.revrobotics.CANSparkMax.IdleMode;
+import com.revrobotics.CANSparkMax.SoftLimitDirection;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
 import edu.wpi.first.wpilibj.AnalogPotentiometer;
@@ -37,7 +38,7 @@ public class Arm extends SubsystemBase {
     
         // PID coefficients
         shoulder_kP = 5e-5; 
-        shoulder_kI = 1e-6;
+        shoulder_kI = 0;
         shoulder_kD = 0; 
         shoulder_kIz = 0; 
         shoulder_kFF = 0.000156; 
@@ -46,8 +47,8 @@ public class Arm extends SubsystemBase {
         shoulder_maxRPM = 11000;
     
         // Smart Motion Coefficients
-        shoulder_maxVel = 2000; // rpm
-        shoulder_maxAcc = 1500;
+        shoulder_maxVel = 11000; // rpm
+        shoulder_maxAcc = 3000;
     
         // set PID coefficients
         shoulder_pidController.setP(shoulder_kP);
@@ -62,6 +63,12 @@ public class Arm extends SubsystemBase {
     shoulder_pidController.setSmartMotionMinOutputVelocity(shoulder_minVel, shoulder_smartMotionSlot);
     shoulder_pidController.setSmartMotionMaxAccel(shoulder_maxAcc, shoulder_smartMotionSlot);
     shoulder_pidController.setSmartMotionAllowedClosedLoopError(shoulder_allowedErr, shoulder_smartMotionSlot);
+    shoulder_encoder.setPositionConversionFactor(1/2.577777);
+    shoulder.setSoftLimit(SoftLimitDirection.kForward, 125);
+    shoulder.setSoftLimit(SoftLimitDirection.kReverse, -10);
+    shoulder.enableSoftLimit(SoftLimitDirection.kForward, true);
+    shoulder.enableSoftLimit(SoftLimitDirection.kReverse, true);
+    
 
     // initialze PID controller and encoder objects
     wrist_pidController = wrist.getPIDController();
@@ -69,13 +76,13 @@ public class Arm extends SubsystemBase {
 
     // PID coefficients
     wrist_kP = 5e-5; 
-    wrist_kI = 1e-6;
+    wrist_kI = 0;
     wrist_kD = 0; 
     wrist_kIz = 0; 
     wrist_kFF = 0.000156; 
-    wrist_kMaxOutput = 1; 
-    wrist_kMinOutput = -1;
-    wrist_maxRPM = 11000;
+    wrist_kMaxOutput = .5; 
+    wrist_kMinOutput = -.5;
+    wrist_maxRPM = 5000;
 
     // Smart Motion Coefficients
     wrist_maxVel = 2000; // rpm
@@ -94,6 +101,11 @@ wrist_pidController.setSmartMotionMaxVelocity(wrist_maxVel, wrist_smartMotionSlo
 wrist_pidController.setSmartMotionMinOutputVelocity(wrist_minVel, wrist_smartMotionSlot);
 wrist_pidController.setSmartMotionMaxAccel(wrist_maxAcc, wrist_smartMotionSlot);
 wrist_pidController.setSmartMotionAllowedClosedLoopError(wrist_allowedErr, wrist_smartMotionSlot);
+wrist_encoder.setPositionConversionFactor(1/.225);
+    // wrist.setSoftLimit(SoftLimitDirection.kForward, ####);
+    // wrist.setSoftLimit(SoftLimitDirection.kReverse, ####);
+    // wrist.enableSoftLimit(SoftLimitDirection.kForward, true);
+    // wrist.enableSoftLimit(SoftLimitDirection.kReverse, true);
 
 
     //Comment this line out if you're done tuning the shoulder
@@ -103,8 +115,8 @@ wrist_pidController.setSmartMotionAllowedClosedLoopError(wrist_allowedErr, wrist
     wristTunerSetup();
 
     CoastMode();
-    shoulder.setInverted(false);
-    
+    shoulder.setInverted(true);
+    wrist.setInverted(true);
     }
 
   public void setSpeed(double speed) {
@@ -113,23 +125,21 @@ wrist_pidController.setSmartMotionAllowedClosedLoopError(wrist_allowedErr, wrist
   }
 
 
-  public void setWristSpeed(double speed) {
-    wrist.set(speed);
-  }
-
   public void setIntakeSpeed(double speed) {
     intake.set(speed);
   }
 
 
 
-
+/**
+   * set the reference position for the should and wrist simulataniously
+   *
+   * @param shoulderPosition - the position of the shoulder in degrees with 0 being stowed flate
+   * @param wristPosition - the position of the shoulder in degrees with 0 being stowed vertically
+   */
 public void setArmPosition(double shoulderPosition, double wristPosition){
-  //this function will take in the desired shoulder position and wrist position
-  //and set the position of both of them. It needs to look at the shoulder and 
-  //wrist potentiometer.
-  //
-
+  wrist_pidController.setReference(wristPosition, CANSparkMax.ControlType.kSmartMotion);
+  shoulder_pidController.setReference(shoulderPosition, CANSparkMax.ControlType.kSmartMotion);
 }
 
 
@@ -157,7 +167,7 @@ private void ShoulderTunerSetup(){
     SmartDashboard.putNumber("Shoulder/Max Acceleration", shoulder_maxAcc);
     SmartDashboard.putNumber("Shoulder/Allowed Closed Loop Error", shoulder_allowedErr);
     SmartDashboard.putNumber("Shoulder/Set Position", 0);
-    SmartDashboard.putNumber("Shoulder/Set Velocity", 0);
+    SmartDashboard.putNumber("Shoulder/Set Position", 0);
 }
 
 private void ShoulderTuner(){
@@ -197,13 +207,32 @@ private void ShoulderTuner(){
       * setReference method on an existing pid object and setting
       * the control type to kSmartMotion
       */
-     shoulder_pidController.setReference(shoulder_setPoint, CANSparkMax.ControlType.kSmartMotion);
+    //  shoulder_pidController.setReference(shoulder_setPoint, CANSparkMax.ControlType.kSmartMotion);
      shoulder_processVariable = shoulder_encoder.getPosition();
    
    SmartDashboard.putNumber("Shoulder/SetPoint", shoulder_setPoint);
    SmartDashboard.putNumber("Shoulder/Process Variable", shoulder_processVariable);
    SmartDashboard.putNumber("Shoulder/Output", shoulder.getAppliedOutput());  
 }
+
+private void coDriverControlsSetup(){
+  SmartDashboard.putBoolean("CoDriver/Cone Mode", true);
+  SmartDashboard.putBoolean("CoDriver/Slomo Mode", false);
+  SmartDashboard.putNumber("CoDriver/Shoulder Pickup Angle", 47);
+  SmartDashboard.putNumber("CoDriver/Wrist Pickup Angle", 75);
+
+}
+
+private void coDriverControls(){
+  SmartDashboard.getBoolean("CoDriver/Cone Mode", true);
+  SmartDashboard.getBoolean("CoDriver/Slomo Mode", false);
+  SmartDashboard.getNumber("CoDriver/Shoulder Pickup Angle", 47);
+  SmartDashboard.getNumber("CoDriver/Wrist Pickup Angle", 75);
+
+
+
+}
+
 
 private void wristTunerSetup(){
   
@@ -263,7 +292,7 @@ private void wristTuner(){
     * setReference method on an existing pid object and setting
     * the control type to kSmartMotion
     */
-   wrist_pidController.setReference(wrist_setPoint, CANSparkMax.ControlType.kSmartMotion);
+  //  wrist_pidController.setReference(wrist_setPoint, CANSparkMax.ControlType.kSmartMotion);
    wrist_processVariable = wrist_encoder.getPosition();
  
  SmartDashboard.putNumber("Wrist/SetPoint", wrist_setPoint);

@@ -10,12 +10,11 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
 import frc.lib.config.SwerveModuleConstants;
-import com.ctre.phoenix.sensors.CANCoder;
 
 public final class Constants {
 
   public static final class Swerve {
-    public static final double stickDeadband = 0.1;
+    public static final double stickDeadband = 0.05;
 
     // public static final int pigeonID = 6;
     public static final boolean invertGyro = false; // Always ensure Gyro is CCW+ CW-
@@ -40,8 +39,8 @@ public final class Constants {
     public static final double openLoopRamp = 0.25;
     public static final double closedLoopRamp = 0.0;
 
-    public static final double driveGearRatio = (8.14285 / 1.0); // (14.0 / 50.0) * (25.0 / 19.0) * (15.0 / 45.0)
-    public static final double angleGearRatio = (21.42857 / 1.0); // (14.0 / 50.0) * (10.0 / 60.0)
+    public static final double driveGearRatio = (8.14285/1); // (14.0 / 50.0) * (25.0 / 19.0) * (15.0 / 45.0)
+    public static final double angleGearRatio = (21.42857); // (14.0 / 50.0) * (10.0 / 60.0)
 
     public static final SwerveDriveKinematics swerveKinematics =
         new SwerveDriveKinematics(
@@ -75,8 +74,7 @@ public final class Constants {
     public static final double driveKA = 0.27;
 
     /* Drive Motor Conversion Factors */
-    public static final double driveConversionPositionFactor =
-        (wheelDiameter * Math.PI) / driveGearRatio;
+    public static final double driveConversionPositionFactor = (wheelDiameter * Math.PI) / driveGearRatio;
     public static final double driveConversionVelocityFactor = driveConversionPositionFactor / 60.0;
     public static final double angleConversionFactor = 360.0 / angleGearRatio;
 
@@ -88,18 +86,13 @@ public final class Constants {
    *
    * <p>This is a measure of how fast the robot should be able to drive in a straight line.
    */
-    public static final double MOTOR_FREE_SPEED_RPM = 5676;
-  public static final double MAX_VELOCITY_METERS_PER_SECOND = MOTOR_FREE_SPEED_RPM / 60.0 / driveGearRatio * wheelCircumference;
-    public static final double maxSpeed = MAX_VELOCITY_METERS_PER_SECOND; // meters per second
-
+    public static final double maxSpeed = .1; // meters per second
   /**
    * The maximum angular velocity of the robot in radians per second.
    *
    * <p>This is a measure of how fast the robot can rotate in place.
    */
-  public static final double MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND =
-      MAX_VELOCITY_METERS_PER_SECOND / Math.hypot(trackWidth / 2.0, wheelBase / 2.0);
-    public static final double maxAngularVelocity = MAX_ANGULAR_VELOCITY_RADIANS_PER_SECOND;
+    public static final double maxAngularVelocity = 1.5;
 
     /* Neutral Modes */
     public static final IdleMode angleNeutralMode = IdleMode.kBrake;
@@ -182,16 +175,6 @@ public final class Constants {
   }
 
   public static class ArmConstants {
-        /* Drive Motor PID Values */
-        public static final double armKP = 0.1;
-        public static final double armKI = 0.0;
-        public static final double armKD = 0.0;
-        public static final double armKFF = 0.0;
-    
-        /* Drive Motor Characterization Values */
-        public static final double armKS = 0.667;
-        public static final double armKV = 2.44;
-        public static final double armKA = 0.27;
 
         public static final int shoulderMotorID = 15;
         public static final int intakeMotorID = 16;
